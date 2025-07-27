@@ -14,6 +14,8 @@ export const useDictationStore = defineStore('dictation', () => {
   const isLoading = ref(false)
   const currentSession = ref<DictationSession | null>(null)
   const showResult = ref(false)
+  const isAudioButtonEnabled = ref(false)
+  const isAutoPlaying = ref(false)
 
   // Getters
   const currentWord = computed(() => words.value[currentWordIndex.value])
@@ -33,6 +35,8 @@ export const useDictationStore = defineStore('dictation', () => {
       userInput.value = ''
       results.value = []
       showResult.value = false
+      isAudioButtonEnabled.value = false
+      isAutoPlaying.value = false
 
       // Create new session
       currentSession.value = {
@@ -42,6 +46,9 @@ export const useDictationStore = defineStore('dictation', () => {
         correctWords: 0,
         results: []
       }
+      
+      // Auto play audio for first word
+      autoPlayAudio()
     } catch (error) {
       console.error('Failed to start dictation:', error)
       throw error
@@ -73,6 +80,10 @@ export const useDictationStore = defineStore('dictation', () => {
     } else {
       currentWordIndex.value++
       userInput.value = ''
+      // Reset audio button state for new word
+      isAudioButtonEnabled.value = false
+      // Auto play audio for new word
+      autoPlayAudio()
     }
   }
 
@@ -98,15 +109,59 @@ export const useDictationStore = defineStore('dictation', () => {
     results.value = []
     currentSession.value = null
     showResult.value = false
+    isAudioButtonEnabled.value = false
+    isAutoPlaying.value = false
   }
 
   function playAudio() {
-    if (currentWord.value?.audioUrl) {
+    if (currentWord.value?.audioUrl && isAudioButtonEnabled.value) {
       const audio = new Audio(currentWord.value.audioUrl)
       audio.play().catch(error => {
         console.error('Failed to play audio:', error)
       })
     }
+  }
+
+  function autoPlayAudio() {
+    if (!currentWord.value?.audioUrl) return
+    
+    isAutoPlaying.value = true
+    isAudioButtonEnabled.value = false
+    
+    let playCount = 0
+    const maxPlays = 2
+    
+    function playOnce() {
+      if (playCount >= maxPlays) {
+        isAutoPlaying.value = false
+        isAudioButtonEnabled.value = true
+        return
+      }
+      
+      const audio = new Audio(currentWord.value!.audioUrl!)
+      
+      audio.addEventListener('ended', () => {
+        playCount++
+        // Add a small delay between plays
+        setTimeout(() => {
+          playOnce()
+        }, 500)
+      })
+      
+      audio.addEventListener('error', (error) => {
+        console.error('Failed to play audio:', error)
+        isAutoPlaying.value = false
+        isAudioButtonEnabled.value = true
+      })
+      
+      audio.play().catch(error => {
+        console.error('Failed to play audio:', error)
+        isAutoPlaying.value = false
+        isAudioButtonEnabled.value = true
+      })
+    }
+    
+    playOnce()
   }
 
   return {
@@ -118,6 +173,8 @@ export const useDictationStore = defineStore('dictation', () => {
     isLoading,
     currentSession,
     showResult,
+    isAudioButtonEnabled,
+    isAutoPlaying,
     
     // Getters
     currentWord,
@@ -131,6 +188,7 @@ export const useDictationStore = defineStore('dictation', () => {
     nextWord,
     finishDictation,
     resetDictation,
-    playAudio
+    playAudio,
+    autoPlayAudio
   }
 })

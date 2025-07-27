@@ -19,9 +19,12 @@
           v-if="dictationStore.currentWord?.audioUrl" 
           @click="dictationStore.playAudio()"
           class="audio-btn"
-          title="播放发音"
+          :class="{ 'disabled': !dictationStore.isAudioButtonEnabled, 'playing': dictationStore.isAutoPlaying }"
+          :disabled="!dictationStore.isAudioButtonEnabled"
+          :title="dictationStore.isAutoPlaying ? '音频播放中...' : dictationStore.isAudioButtonEnabled ? '播放发音' : '音频播放中，请稍候'"
         >
-          🔊 播放发音
+          <span v-if="dictationStore.isAutoPlaying">🔊 播放中...</span>
+          <span v-else>🔊 播放发音</span>
         </button>
         
         <div class="input-section">
@@ -237,11 +240,38 @@ onMounted(() => {
   padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s;
+  font-size: 1rem;
 }
 
-.audio-btn:hover {
+.audio-btn:hover:not(.disabled) {
   background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.audio-btn.disabled {
+  background: #d6d6d6;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.audio-btn.playing {
+  background: #667eea;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .input-section {
