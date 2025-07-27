@@ -27,6 +27,10 @@ jobs:
         npm ci
         
     - name: Build
+      env:
+        VITE_CONTENTFUL_SPACE_ID: ${{ secrets.VITE_CONTENTFUL_SPACE_ID }}
+        VITE_CONTENTFUL_ACCESS_TOKEN: ${{ secrets.VITE_CONTENTFUL_ACCESS_TOKEN }}
+        VITE_CONTENTFUL_ENVIRONMENT: ${{ secrets.VITE_CONTENTFUL_ENVIRONMENT }}
       run: |
         cd frontend
         npm run build
