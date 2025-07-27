@@ -38,19 +38,71 @@ export async function fetchWords(limit: number = 10): Promise<WordEntry[]> {
   }
 }
 
-// Get total count of entries (optimized approach)
+// Cache configuration
+const CACHE_KEY = 'contentful_total_count_cache'
+const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
+
+interface CacheData {
+  count: number
+  timestamp: number
+}
+
+// Get total count of entries with caching (optimized approach)
 export async function getTotalEntriesCount(): Promise<number> {
   try {
+    // Check if we have cached data
+    const cachedData = localStorage.getItem(CACHE_KEY)
+    
+    if (cachedData) {
+      try {
+        const parsed: CacheData = JSON.parse(cachedData)
+        const now = Date.now()
+        
+        // Check if cache is still valid (within 7 days)
+        if (now - parsed.timestamp < CACHE_DURATION) {
+          console.log('Using cached total count:', parsed.count)
+          return parsed.count
+        } else {
+          console.log('Cache expired, fetching new total count')
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse cached data, fetching new total count')
+      }
+    }
+    
+    // Fetch new count from API
     const response = await client.getEntries({
       content_type: 'englishDictation',
       limit: 1, // Only get 1 entry to minimize data transfer
       select: ['sys.id'] // Only select the ID field
     })
-    return response.total
+    
+    const totalCount = response.total
+    
+    // Cache the new count
+    const cacheData: CacheData = {
+      count: totalCount,
+      timestamp: Date.now()
+    }
+    
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+      console.log('Cached new total count:', totalCount)
+    } catch (storageError) {
+      console.warn('Failed to cache total count:', storageError)
+    }
+    
+    return totalCount
   } catch (error) {
     console.error('Error getting total entries count:', error)
     throw error
   }
+}
+
+// Function to manually clear the cache (useful for debugging or forced refresh)
+export function clearTotalCountCache(): void {
+  localStorage.removeItem(CACHE_KEY)
+  console.log('Total count cache cleared')
 }
 
 // Fetch random words using skip parameter (optimized approach)
