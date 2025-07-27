@@ -102,7 +102,7 @@ export const useDictationStore = defineStore('dictation', () => {
 
   function playAudio() {
     if (currentWord.value?.audioUrl) {
-      const audio = new Audio(`https:${currentWord.value.audioUrl}`)
+      const audio = new Audio(currentWord.value.audioUrl)
       audio.play().catch(error => {
         console.error('Failed to play audio:', error)
       })
