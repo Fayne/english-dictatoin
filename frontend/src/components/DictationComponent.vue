@@ -102,6 +102,9 @@
           <button @click="dictationStore.resetDictation()" class="btn btn-primary">
             再来一次
           </button>
+          <button @click="goToHome" class="btn btn-secondary">
+            返回首页
+          </button>
         </div>
       </div>
     </div>
@@ -110,9 +113,11 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useDictationStore } from '@/stores/dictation'
 
 const dictationStore = useDictationStore()
+const router = useRouter()
 const inputRef = ref<HTMLInputElement>()
 const lastResult = ref<boolean | null>(null)
 const lastCorrectWord = ref('')
@@ -144,6 +149,11 @@ async function submitAnswer() {
       })
     }
   }, 2000)
+}
+
+function goToHome() {
+  dictationStore.resetDictation()
+  router.push({ name: 'home' })
 }
 
 onMounted(() => {
@@ -451,7 +461,10 @@ onMounted(() => {
 }
 
 .action-buttons {
-  text-align: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
